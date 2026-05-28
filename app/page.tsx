@@ -1,6 +1,11 @@
 'use client'
 import { useState } from 'react'
-import { supabase } from './lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -8,8 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleLogin = async () => {
     setLoading(true)
     setError('')
 
@@ -27,21 +31,22 @@ export default function LoginPage() {
     const { data: userData } = await supabase
       .from('users')
       .select('role')
-      .eq('id', data.user.id)
+      .eq('email', email)
       .single()
 
     const role = userData?.role
-    if (role === 'user') window.location.href = '/dashboard/user'
-    else if (role === 'manajer') window.location.href = '/dashboard/manajer'
+    if (role === 'manajer') window.location.href = '/dashboard/manajer'
     else if (role === 'staff_pengadaan') window.location.href = '/dashboard/staff-pengadaan'
     else if (role === 'staff_keuangan') window.location.href = '/dashboard/staff-keuangan'
     else if (role === 'supplier') window.location.href = '/dashboard/supplier'
+    else window.location.href = '/dashboard/user'
+
+    setLoading(false)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <span className="text-white text-2xl font-bold">P</span>
@@ -51,13 +56,13 @@ export default function LoginPage() {
           <p className="text-gray-400 text-xs mt-1">Institut Teknologi Kalimantan</p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm mb-4">
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
@@ -65,8 +70,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="email@itk.ac.id"
-              required
+              placeholder="email@procurement.com"
             />
           </div>
           <div>
@@ -75,21 +79,20 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="••••••••"
-              required
             />
           </div>
           <button
-            type="submit"
+            onClick={handleLogin}
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-200 text-sm"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-200 text-sm disabled:opacity-50"
           >
             {loading ? 'Memproses...' : 'Masuk'}
           </button>
-        </form>
+        </div>
 
-        {/* Footer */}
         <p className="text-center text-xs text-gray-400 mt-6">
           Sistem Informasi Logistik © 2026
         </p>
